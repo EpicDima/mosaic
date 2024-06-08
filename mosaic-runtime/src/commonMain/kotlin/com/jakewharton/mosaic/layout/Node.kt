@@ -4,8 +4,8 @@ import com.jakewharton.mosaic.TextCanvas
 import com.jakewharton.mosaic.TextSurface
 import com.jakewharton.mosaic.layout.Placeable.PlacementScope
 import com.jakewharton.mosaic.modifier.Modifier
-import com.jakewharton.mosaic.ui.AnsiLevel
 import com.jakewharton.mosaic.ui.unit.Constraints
+import kotlin.math.max
 
 internal fun interface DebugPolicy {
 	fun MosaicNode.renderDebug(): String
@@ -58,8 +58,8 @@ internal abstract class MosaicNodeLayer(
 		measureResult.placeChildren()
 	}
 
-	open fun drawTo(canvas: TextCanvas) {
-		next?.drawTo(canvas)
+	open fun drawTo(canvas: TextCanvas, inStatic: Boolean) {
+		next?.drawTo(canvas, inStatic)
 	}
 
 	override fun minIntrinsicWidth(height: Int): Int {
@@ -131,25 +131,28 @@ internal class MosaicNode(
 	}
 
 	/**
-	 * Draw this node to a [TextSurface].
+	 * Draw this node to a [TextCanvas].
 	 * A call to [measureAndPlace] must precede calls to this function.
 	 */
-	fun paint(ansiLevel: AnsiLevel): TextSurface {
-		val surface = TextSurface(width, height, ansiLevel)
-		topLayer.drawTo(surface)
-		return surface
+	fun paint(textCanvas: TextCanvas, inStatic: Boolean = false) {
+		topLayer.drawTo(textCanvas, inStatic)
 	}
 
 	/**
-	 * Append any static [TextSurfaces][TextSurface] to [statics].
+	 * Draw all nested [Static] nodes to a [TextSurface].
 	 * A call to [measureAndPlace] must precede calls to this function.
 	 */
-	fun paintStatics(statics: MutableList<TextSurface>, ansiLevel: AnsiLevel) {
+	fun paintStatics(textSurface: TextSurface) {
 		for (child in children) {
 			if (isStatic) {
-				statics += child.paint(ansiLevel)
+				textSurface.resize(
+					newWidth = max(textSurface.width, child.width),
+					newHeight = textSurface.height + child.height,
+				)
+				child.paint(textSurface, inStatic = true)
+				textSurface.translationY += child.height
 			}
-			child.paintStatics(statics, ansiLevel)
+			child.paintStatics(textSurface)
 		}
 		onStaticDraw?.invoke()
 	}
@@ -180,10 +183,10 @@ private class BottomLayer(
 		return node.measurePolicy.run { measure(node.children, constraints) }
 	}
 
-	override fun drawTo(canvas: TextCanvas) {
+	override fun drawTo(canvas: TextCanvas, inStatic: Boolean) {
 		for (child in node.children) {
 			if (child.width != 0 && child.height != 0) {
-				child.topLayer.drawTo(canvas)
+				child.topLayer.drawTo(canvas, inStatic)
 			}
 		}
 	}
@@ -234,14 +237,18 @@ private class DrawLayer(
 	private val element: DrawModifier,
 	private val lowerLayer: MosaicNodeLayer,
 ) : MosaicNodeLayer(lowerLayer, false) {
-	override fun drawTo(canvas: TextCanvas) {
+	override fun drawTo(canvas: TextCanvas, inStatic: Boolean) {
 		val oldX = canvas.translationX
 		val oldY = canvas.translationY
 		canvas.translationX = x
-		canvas.translationY = y
+		if (inStatic) {
+			canvas.translationY += y
+		} else {
+			canvas.translationY = y
+		}
 		val scope = object : TextCanvasDrawScope(canvas, width, height), ContentDrawScope {
 			override fun drawContent() {
-				lowerLayer.drawTo(canvas)
+				lowerLayer.drawTo(canvas, inStatic)
 			}
 		}
 		element.run { scope.draw() }

@@ -178,11 +178,11 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(rootNode).toString()).isEqualTo(
 			"""
-			|One
-			|Two
+			|One $s
+			|Two $s
 			|Three
-			|Four
-			|Five
+			|Four$s
+			|Five$s
 			|Sup
 			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),

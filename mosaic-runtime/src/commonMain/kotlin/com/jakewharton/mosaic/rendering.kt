@@ -19,9 +19,11 @@ internal interface Rendering {
 @ExperimentalTime
 internal class DebugRendering(
 	private val systemClock: TimeSource = TimeSource.Monotonic,
-	private val ansiLevel: AnsiLevel = AnsiLevel.TRUECOLOR,
+	ansiLevel: AnsiLevel = AnsiLevel.TRUECOLOR,
 ) : Rendering {
 	private var lastRender: TimeMark? = null
+	private val staticTextSurface = TextSurface(ansiLevel)
+	private val textSurface = TextSurface(ansiLevel)
 
 	override fun render(node: MosaicNode): CharSequence {
 		var failed = false
@@ -39,14 +41,11 @@ internal class DebugRendering(
 			appendLine()
 
 			try {
-				val statics = ArrayList<TextSurface>()
-					.also { node.paintStatics(it, ansiLevel) }
-					.map { it.render() }
-				if (statics.isNotEmpty()) {
+				staticTextSurface.reset()
+				node.paintStatics(staticTextSurface)
+				if (staticTextSurface.width > 0 && staticTextSurface.height > 0) {
 					appendLine("STATIC:")
-					for (static in statics) {
-						appendLine(static)
-					}
+					appendLine(staticTextSurface.render())
 					appendLine()
 				}
 			} catch (t: Throwable) {
@@ -57,7 +56,10 @@ internal class DebugRendering(
 
 			appendLine("OUTPUT:")
 			try {
-				appendLine(node.paint(ansiLevel).render())
+				textSurface.reset()
+				textSurface.resize(node.width, node.height)
+				node.paint(textSurface)
+				appendLine(textSurface.render())
 			} catch (t: Throwable) {
 				failed = true
 				append(t.stackTraceToString())
@@ -71,11 +73,13 @@ internal class DebugRendering(
 }
 
 internal class AnsiRendering(
-	private val ansiLevel: AnsiLevel = AnsiLevel.TRUECOLOR,
+	ansiLevel: AnsiLevel = AnsiLevel.TRUECOLOR,
 ) : Rendering {
-	private val stringBuilder = StringBuilder(100)
-	private val staticSurfaces = ArrayList<TextSurface>()
+	private val stringBuilder = StringBuilder(128)
 	private var lastHeight = 0
+
+	private val staticTextSurface = TextSurface(ansiLevel)
+	private val textSurface = TextSurface(ansiLevel)
 
 	override fun render(node: MosaicNode): CharSequence {
 		return stringBuilder.apply {
@@ -89,6 +93,9 @@ internal class AnsiRendering(
 			}
 
 			fun appendSurface(canvas: TextSurface) {
+				if (canvas.width <= 0 || canvas.height <= 0) {
+					return
+				}
 				for (row in 0 until canvas.height) {
 					canvas.appendRowTo(this, row)
 					if (staleLines-- > 0) {
@@ -101,14 +108,14 @@ internal class AnsiRendering(
 
 			node.measureAndPlace()
 
-			node.paintStatics(staticSurfaces, ansiLevel)
-			for (staticSurface in staticSurfaces) {
-				appendSurface(staticSurface)
-			}
-			staticSurfaces.clear()
+			staticTextSurface.reset()
+			node.paintStatics(staticTextSurface)
+			appendSurface(staticTextSurface)
 
-			val surface = node.paint(ansiLevel)
-			appendSurface(surface)
+			textSurface.reset()
+			textSurface.resize(node.width, node.height)
+			node.paint(textSurface)
+			appendSurface(textSurface)
 
 			// If the new output contains fewer lines than the last output, clear those old lines.
 			for (i in 0 until staleLines) {
@@ -125,7 +132,7 @@ internal class AnsiRendering(
 
 			append(ansiEndSynchronizedUpdate)
 
-			lastHeight = surface.height
+			lastHeight = textSurface.height
 		}
 	}
 }
