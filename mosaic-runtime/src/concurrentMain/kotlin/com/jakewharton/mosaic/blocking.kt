@@ -8,3 +8,9 @@ public fun runMosaicBlocking(content: @Composable () -> Unit) {
 		runMosaic(content)
 	}
 }
+
+public fun renderMosaicBlocking(content: @Composable () -> Unit): String {
+	return runBlocking {
+		renderMosaic(content)
+	}
+}

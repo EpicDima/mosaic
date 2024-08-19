@@ -5,9 +5,10 @@ import assertk.assertions.isEqualTo
 import com.jakewharton.mosaic.ui.Column
 import com.jakewharton.mosaic.ui.Text
 import kotlin.test.Test
+import kotlinx.coroutines.test.runTest
 
 class MosaicTest {
-	@Test fun render() {
+	@Test fun render() = runTest {
 		val actual = renderMosaic {
 			Column {
 				Text("One")

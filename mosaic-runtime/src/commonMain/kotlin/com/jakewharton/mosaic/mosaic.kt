@@ -19,9 +19,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -30,48 +33,43 @@ import kotlinx.coroutines.launch
  */
 private const val debugOutput = false
 
-internal fun mosaicNodes(content: @Composable () -> Unit): MosaicNode {
-	val clock = BroadcastFrameClock()
-	val job = Job()
-	val composeContext = clock + job
-
-	val rootNode = createRootNode()
-	val recomposer = Recomposer(composeContext)
-	val composition = Composition(MosaicNodeApplier(rootNode), recomposer)
-
-	composition.setContent(content)
-
-	job.cancel()
-	composition.dispose()
-
-	return rootNode
-}
-
-public fun renderMosaic(content: @Composable () -> Unit): String {
-	val rootNode = mosaicNodes(content)
-	val render = AnsiRendering().render(rootNode)
-	return render.toString()
-}
-
 public suspend fun runMosaic(content: @Composable () -> Unit) {
 	coroutineScope {
-		val mosaicComposition = MosaicComposition(coroutineScope = this, onRender = ::platformDisplay)
+		val mosaicComposition = RenderingMosaicComposition(
+			coroutineScope = this,
+			onRender = ::platformDisplay,
+		)
 		mosaicComposition.setContent(content)
 		mosaicComposition.awaitComplete()
 	}
 }
 
-internal class MosaicComposition(
+public suspend fun renderMosaic(content: @Composable () -> Unit): String {
+	return callbackFlow {
+		val mosaicComposition = RenderingMosaicComposition(
+			coroutineScope = this,
+			onRender = { render -> launch { send(render.toString()) } },
+		)
+		mosaicComposition.setContent(content)
+		awaitClose { mosaicComposition.cancel() }
+	}.first()
+}
+
+private class RenderingMosaicComposition(
 	coroutineScope: CoroutineScope,
-	override val onRender: (CharSequence) -> Unit,
-) : BaseMosaicComposition(coroutineScope) {
+	onRender: (CharSequence) -> Unit,
+) : MosaicComposition(coroutineScope) {
 	private val terminal = MordantTerminal()
 
-	override val rendering: Rendering = if (debugOutput) {
+	private val rendering: Rendering = if (debugOutput) {
 		@OptIn(ExperimentalTime::class) // Not used in production.
 		DebugRendering(ansiLevel = terminal.info.ansiLevel.toMosaicAnsiLevel())
 	} else {
 		AnsiRendering(ansiLevel = terminal.info.ansiLevel.toMosaicAnsiLevel())
+	}
+
+	override val onEndChanges: (MosaicNode) -> Unit = { rootNode ->
+		onRender(rendering.render(rootNode))
 	}
 
 	override val terminalInfo: MutableState<Terminal> =
@@ -100,16 +98,14 @@ internal class MosaicComposition(
 	}
 }
 
-internal abstract class BaseMosaicComposition(coroutineScope: CoroutineScope) {
-	protected abstract val onRender: (CharSequence) -> Unit
-	protected abstract val rendering: Rendering
+internal abstract class MosaicComposition(coroutineScope: CoroutineScope) {
+	protected abstract val onEndChanges: (MosaicNode) -> Unit
 
 	private val job = Job(coroutineScope.coroutineContext[Job])
 	private val clock = BroadcastFrameClock()
 	protected val composeContext: CoroutineContext = coroutineScope.coroutineContext + job + clock
 
-	private val rootNode = createRootNode()
-	private val applier = MosaicNodeApplier(rootNode) { onRender(rendering.render(rootNode)) }
+	private val applier = MosaicNodeApplier(createRootNode()) { rootNode -> onEndChanges(rootNode) }
 	private val recomposer = Recomposer(composeContext)
 	private val composition = Composition(applier, recomposer)
 
@@ -139,7 +135,7 @@ internal abstract class BaseMosaicComposition(coroutineScope: CoroutineScope) {
 		}
 	}
 
-	fun setContent(content: @Composable () -> Unit) {
+	open fun setContent(content: @Composable () -> Unit) {
 		composition.setContent {
 			CompositionLocalProvider(LocalTerminal provides terminalInfo.value) {
 				content()
@@ -161,6 +157,12 @@ internal abstract class BaseMosaicComposition(coroutineScope: CoroutineScope) {
 			job.cancel()
 		}
 	}
+
+	fun cancel() {
+		recomposer.cancel()
+		composition.dispose()
+		job.cancel()
+	}
 }
 
 internal fun createRootNode(): MosaicNode {
@@ -173,10 +175,10 @@ internal fun createRootNode(): MosaicNode {
 
 internal class MosaicNodeApplier(
 	root: MosaicNode,
-	private val onEndChanges: () -> Unit = {},
+	private val onEndChanges: (MosaicNode) -> Unit = {},
 ) : AbstractApplier<MosaicNode>(root) {
 	override fun onEndChanges() {
-		onEndChanges.invoke()
+		onEndChanges.invoke(root)
 	}
 
 	override fun insertTopDown(index: Int, instance: MosaicNode) {

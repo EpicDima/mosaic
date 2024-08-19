@@ -4,9 +4,11 @@
 
 New:
 - Support synchronized terminal update for rendering.
+- Create `renderMosaicBlocking` to get a string from Mosaic Composable in a blocking way. Wrapper over 'renderMosaic`.
 
 Changed:
 - Сhange `DrawScope#drawRect` API with the ability to draw with text characters and specify `DrawStyle` (`Fill` or `Stroke`).
+- `renderMosaic` is now `suspend` function.
 
 Fixed:
 - Nothing yet!

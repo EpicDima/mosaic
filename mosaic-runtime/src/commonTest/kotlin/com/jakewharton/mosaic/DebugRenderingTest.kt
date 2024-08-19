@@ -1,5 +1,10 @@
 package com.jakewharton.mosaic
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsMatch
@@ -17,94 +22,105 @@ import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TestTimeSource
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
 
 @OptIn(ExperimentalTime::class)
 class DebugRenderingTest {
 	private val timeSource = TestTimeSource()
 	private val rendering = DebugRendering(timeSource)
 
-	@Test fun drawFailureStillRendersMeasuredAndPlacedNodes() {
-		val nodes = mosaicNodes {
-			Row {
-				Text("Hello ")
-				Layout(modifier = Modifier.drawBehind { throw UnsupportedOperationException() }) {
-					layout(5, 1)
+	@Test fun drawFailureStillRendersMeasuredAndPlacedNodes() = runTest {
+		runMosaicTest(withRenderSnapshots = false) {
+			setContent {
+				Row {
+					Text("Hello ")
+					Layout(modifier = Modifier.drawBehind { throw UnsupportedOperationException() }) {
+						layout(5, 1)
+					}
 				}
 			}
+			assertFailure {
+				rendering.render(awaitNodeSnapshot())
+			}.isInstanceOf<RuntimeException>()
+				.message()
+				.isNotNull()
+				.containsMatch(
+					"""
+					|Failed
+					|
+					|NODES:
+					|Row\(arrangement=Arrangement#Start, alignment=Vertical\(bias=-1\)\) x=0 y=0 w=11 h=1
+					|  Text\("Hello "\) x=0 y=0 w=6 h=1 DrawBehind
+					|  Layout\(\) x=6 y=0 w=5 h=1 DrawBehind
+					|
+					|OUTPUT:
+					|(kotlin\.|java\.lang\.)?UnsupportedOperationException:?
+					""".trimMargin().toRegex(),
+				)
 		}
+	}
 
-		assertFailure {
-			rendering.render(nodes)
-		}.isInstanceOf<RuntimeException>()
-			.message()
-			.isNotNull()
-			.containsMatch(
+	@Test fun framesIncludeStatics() = runTest {
+		runMosaicTest(withRenderSnapshots = false) {
+			setContent {
+				Text("Hello")
+				Static(snapshotStateListOf("Static")) {
+					Text(it)
+				}
+			}
+			assertThat(rendering.render(awaitNodeSnapshot())).isEqualTo(
 				"""
-				|Failed
-				|
 				|NODES:
-				|Row\(arrangement=Arrangement#Start, alignment=Vertical\(bias=-1\)\) x=0 y=0 w=11 h=1
-				|  Text\("Hello "\) x=0 y=0 w=6 h=1 DrawBehind
-				|  Layout\(\) x=6 y=0 w=5 h=1 DrawBehind
+				|Text("Hello") x=0 y=0 w=5 h=1 DrawBehind
+				|Static()
+				|  Text("Static") x=0 y=0 w=6 h=1 DrawBehind
+				|
+				|STATIC:
+				|Static
 				|
 				|OUTPUT:
-				|(kotlin\.|java\.lang\.)?UnsupportedOperationException:?
-				""".trimMargin().toRegex(),
+				|Hello
+				|
+				""".trimMargin(),
 			)
+		}
 	}
 
-	@Test fun framesIncludeStatics() {
-		val nodes = mosaicNodes {
-			Text("Hello")
-			Static(snapshotStateListOf("Static")) {
-				Text(it)
+	@Test fun framesAfterFirstHaveTimeHeader() = runTest {
+		runMosaicTest(withRenderSnapshots = false) {
+			setContent {
+				var text by remember { mutableStateOf("Hello") }
+				Text(text)
+				LaunchedEffect(Unit) {
+					delay(100L)
+					text = "World"
+				}
 			}
+
+			assertThat(rendering.render(awaitNodeSnapshot())).isEqualTo(
+				"""
+				|NODES:
+				|Text("Hello") x=0 y=0 w=5 h=1 DrawBehind
+				|
+				|OUTPUT:
+				|Hello
+				|
+				""".trimMargin(),
+			)
+
+			timeSource += 100.milliseconds
+			assertThat(rendering.render(awaitNodeSnapshot())).isEqualTo(
+				"""
+				|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ +100ms
+				|NODES:
+				|Text("World") x=0 y=0 w=5 h=1 DrawBehind
+				|
+				|OUTPUT:
+				|World
+				|
+				""".trimMargin(),
+			)
 		}
-
-		assertThat(rendering.render(nodes)).isEqualTo(
-			"""
-			|NODES:
-			|Text("Hello") x=0 y=0 w=5 h=1 DrawBehind
-			|Static()
-			|  Text("Static") x=0 y=0 w=6 h=1 DrawBehind
-			|
-			|STATIC:
-			|Static
-			|
-			|OUTPUT:
-			|Hello
-			|
-			""".trimMargin(),
-		)
-	}
-
-	@Test fun framesAfterFirstHaveTimeHeader() {
-		val hello = mosaicNodes {
-			Text("Hello")
-		}
-
-		assertThat(rendering.render(hello)).isEqualTo(
-			"""
-			|NODES:
-			|Text("Hello") x=0 y=0 w=5 h=1 DrawBehind
-			|
-			|OUTPUT:
-			|Hello
-			|
-			""".trimMargin(),
-		)
-
-		timeSource += 100.milliseconds
-		assertThat(rendering.render(hello)).isEqualTo(
-			"""
-			|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ +100ms
-			|NODES:
-			|Text("Hello") x=0 y=0 w=5 h=1 DrawBehind
-			|
-			|OUTPUT:
-			|Hello
-			|
-			""".trimMargin(),
-		)
 	}
 }
