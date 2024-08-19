@@ -71,7 +71,7 @@ internal class DebugRendering(
 internal class AnsiRendering(
 	private val ansiLevel: AnsiLevel = AnsiLevel.TRUECOLOR,
 ) : Rendering {
-	private val stringBuilder = StringBuilder(100)
+	private val stringBuilder = StringBuilder(128)
 	private val staticSurfaces = mutableObjectListOf<TextSurface>()
 	private var lastHeight = 0
 
@@ -81,51 +81,45 @@ internal class AnsiRendering(
 
 			append(ansiBeginSynchronizedUpdate)
 
-			var staleLines = lastHeight
-			repeat(staleLines) {
-				append(cursorUp)
+			// don't need to move cursor up if there was zero or one line
+			if (lastHeight > 1) {
+				ansiCursorUp(lastHeight - 1)
 			}
+			append(ansiMoveCursorToFirstColumn)
+			append(ansiClearAllAfterCursor)
 
-			fun appendSurface(canvas: TextSurface) {
-				for (row in 0 until canvas.height) {
-					canvas.appendRowTo(this, row)
-					if (staleLines-- > 0) {
-						// We have previously drawn on this line. Clear the rest to be safe.
-						append(clearLine)
-					}
-					append("\r\n")
-				}
-			}
+			node.measureAndPlace()
 
-			staticSurfaces.let { staticSurfaces ->
-				node.paintStatics(staticSurfaces, ansiLevel)
-				if (staticSurfaces.isNotEmpty()) {
-					staticSurfaces.forEach { staticSurface ->
-						appendSurface(staticSurface)
-					}
-					staticSurfaces.clear()
-				}
-			}
+			var afterStatic = false // in order not to overwrite last line of static output
+            staticSurfaces.let { staticSurfaces ->
+                node.paintStatics(staticSurfaces, ansiLevel)
+                if (staticSurfaces.isNotEmpty()) {
+                    staticSurfaces.forEach { staticSurface ->
+                        appendSurface(staticSurface, addLineBreakAtBeginning = false)
+                        if (!afterStatic && staticSurface.height > 0) {
+                            afterStatic = true
+                        }
+                    }
+                    staticSurfaces.clear()
+                }
+            }
 
 			val surface = node.paint(ansiLevel)
-			appendSurface(surface)
-
-			// If the new output contains fewer lines than the last output, clear those old lines.
-			for (i in 0 until staleLines) {
-				if (i > 0) {
-					append("\r\n")
-				}
-				append(clearLine)
+			if (node.height > 0) {
+				appendSurface(surface, addLineBreakAtBeginning = afterStatic)
 			}
-
-			// Move cursor back up to end of the new output.
-			repeat(staleLines - 1) {
-				append(cursorUp)
-			}
+			lastHeight = surface.height
 
 			append(ansiEndSynchronizedUpdate)
+		}
+	}
 
-			lastHeight = surface.height
+	private fun StringBuilder.appendSurface(canvas: TextSurface, addLineBreakAtBeginning: Boolean) {
+		for (row in 0 until canvas.height) {
+			if (row > 0 || (row == 0 && addLineBreakAtBeginning)) {
+				append("\r\n")
+			}
+			canvas.appendRowTo(this, row)
 		}
 	}
 }
