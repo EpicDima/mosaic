@@ -31,10 +31,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|One $s
+			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 			|Two $s
 			|Three
-			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -61,10 +60,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|One $s
+			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 			|Two $s
 			|Three
-			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -91,10 +89,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|One $s
+			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 			|Two $s
 			|Three
-			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -133,10 +130,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|One $s
+			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 			|Two $s
 			|Three
-			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -153,10 +149,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|One $s
+			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 			|Two $s
 			|Three
-			|
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -177,10 +172,9 @@ class MosaicTest {
 		actuals.forEach { actual ->
 			assertThat(actual).isEqualTo(
 				"""
-				|One $s
+				|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
 				|Two $s
 				|Three
-				|
 				""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 			)
 		}
