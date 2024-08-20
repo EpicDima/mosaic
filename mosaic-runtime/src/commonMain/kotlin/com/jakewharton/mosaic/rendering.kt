@@ -83,10 +83,9 @@ internal class AnsiRendering(
 
 			// don't need to move cursor up if there was zero or one line
 			if (lastHeight > 1) {
-				ansiCursorUp(lastHeight - 1)
+                ansiMoveCursorUp(lastHeight - 1)
 			}
 			append(ansiMoveCursorToFirstColumn)
-			append(ansiClearAllAfterCursor)
 
 			node.measureAndPlace()
 
@@ -110,16 +109,18 @@ internal class AnsiRendering(
 			}
 			lastHeight = surface.height
 
+			append(ansiClearAllAfterCursor)
 			append(ansiEndSynchronizedUpdate)
 		}
 	}
 
 	private fun StringBuilder.appendSurface(canvas: TextSurface, addLineBreakAtBeginning: Boolean) {
-		for (row in 0 until canvas.height) {
-			if (row > 0 || (row == 0 && addLineBreakAtBeginning)) {
+		for (rowIndex in 0 until canvas.height) {
+			if (rowIndex > 0 || (rowIndex == 0 && addLineBreakAtBeginning)) {
 				append("\r\n")
 			}
-			canvas.appendRowTo(this, row)
+			canvas.appendRowTo(this, rowIndex)
+			append(ansiClearLineAfterCursor)
 		}
 	}
 }

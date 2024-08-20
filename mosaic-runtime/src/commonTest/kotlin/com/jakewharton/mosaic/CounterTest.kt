@@ -35,7 +35,7 @@ class CounterTest {
 			setCounter()
 			for (i in 0..20) {
 				assertThat(awaitRenderSnapshot()).isEqualTo(
-					"${ansiBeginSynchronizedUpdate}${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}The count is: ${i}$ansiEndSynchronizedUpdate",
+					"${ansiMoveCursorToFirstColumn}The count is: ${i}$ansiClearLineAfterCursor$ansiClearAllAfterCursor".wrapWithAnsiSynchronizedUpdate(),
 				)
 			}
 		}

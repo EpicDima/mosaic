@@ -13,9 +13,11 @@ internal const val CSI = "$ESC["
 internal const val ansiBeginSynchronizedUpdate = "$CSI?2026h"
 internal const val ansiEndSynchronizedUpdate = "$CSI?2026l"
 
-internal const val ansiReset = "${CSI}0"
+internal const val ansiClearLineAfterCursor = "${CSI}K"
 internal const val ansiMoveCursorToFirstColumn = "${CSI}0G"
 internal const val ansiClearAllAfterCursor = "${CSI}0J"
+
+internal const val ansiReset = "${CSI}0"
 
 internal const val cursorHide = "$CSI?25l"
 internal const val cursorShow = "$CSI?25h"
@@ -34,7 +36,7 @@ internal const val ansiBgColorOffset = 10
 internal const val ansiSelectorColor256 = 5
 internal const val ansiSelectorColorRgb = 2
 
-internal inline fun StringBuilder.ansiCursorUp(lines: Int) {
+internal inline fun StringBuilder.ansiMoveCursorUp(lines: Int) {
 	append(CSI)
 	append(lines)
 	append("A")

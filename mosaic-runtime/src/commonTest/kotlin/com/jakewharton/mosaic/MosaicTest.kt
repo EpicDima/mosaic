@@ -45,9 +45,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -74,9 +74,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -103,9 +103,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -144,9 +144,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -163,9 +163,9 @@ class MosaicTest {
 		}
 		assertThat(actual).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -186,9 +186,9 @@ class MosaicTest {
 		actuals.forEach { actual ->
 			assertThat(actual).isEqualTo(
 				"""
-				|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-				|Two $s
-				|Three
+				|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+				|Two  $ansiClearLineAfterCursor
+				|Three$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 				""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 			)
 		}
