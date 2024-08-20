@@ -23,8 +23,8 @@ class AnsiRenderingTest {
 		// TODO We should not draw trailing whitespace.
 		assertThat(rendering.render(rootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Hello$s
-			|World!
+			|${ansiMoveCursorToFirstColumn}Hello $ansiClearLineAfterCursor
+			|World!$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -39,8 +39,8 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(firstRootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Hello$s
-			|World!
+			|${ansiMoveCursorToFirstColumn}Hello $ansiClearLineAfterCursor
+			|World!$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 
@@ -55,10 +55,10 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(secondRootNode).toString()).isEqualTo(
 			"""
-			|${ansiCursorUp(1)}${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Hel
-			|lo$s
-			|Wor
-			|ld!
+			|${ansiMoveCursorUp(1)}${ansiMoveCursorToFirstColumn}Hel$ansiClearLineAfterCursor
+			|lo $ansiClearLineAfterCursor
+			|Wor$ansiClearLineAfterCursor
+			|ld!$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -75,10 +75,10 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(firstRootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Hel
-			|lo$s
-			|Wor
-			|ld!
+			|${ansiMoveCursorToFirstColumn}Hel$ansiClearLineAfterCursor
+			|lo $ansiClearLineAfterCursor
+			|Wor$ansiClearLineAfterCursor
+			|ld!$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 
@@ -91,8 +91,8 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(secondRootNode).toString()).isEqualTo(
 			"""
-			|${ansiCursorUp(3)}${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Hello$s
-			|World!
+			|${ansiMoveCursorUp(3)}${ansiMoveCursorToFirstColumn}Hello $ansiClearLineAfterCursor
+			|World!$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -107,8 +107,8 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(rootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}World!
-			|Hello
+			|${ansiMoveCursorToFirstColumn}World!$ansiClearLineAfterCursor
+			|Hello$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -123,8 +123,8 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(firstRootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One
-			|Two
+			|${ansiMoveCursorToFirstColumn}One$ansiClearLineAfterCursor
+			|Two$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 
@@ -137,8 +137,8 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(secondRootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Three
-			|Four
+			|${ansiMoveCursorToFirstColumn}Three$ansiClearLineAfterCursor
+			|Four$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -169,12 +169,12 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(rootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}One $s
-			|Two $s
-			|Three
-			|Four$s
-			|Five$s
-			|Sup
+			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
+			|Two  $ansiClearLineAfterCursor
+			|Three$ansiClearLineAfterCursor
+			|Four $ansiClearLineAfterCursor
+			|Five $ansiClearLineAfterCursor
+			|Sup$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
@@ -194,9 +194,9 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(firstRootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}${ansiClearAllAfterCursor}Static
-			|TopTopTop
-			|LeftLeft$s
+			|${ansiMoveCursorToFirstColumn}Static$ansiClearLineAfterCursor
+			|TopTopTop$ansiClearLineAfterCursor
+			|LeftLeft $ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)
 	}
