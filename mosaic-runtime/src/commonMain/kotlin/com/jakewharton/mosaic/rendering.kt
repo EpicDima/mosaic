@@ -83,29 +83,27 @@ internal class AnsiRendering(
 
 			// don't need to move cursor up if there was zero or one line
 			if (lastHeight > 1) {
-                ansiMoveCursorUp(lastHeight - 1)
+				ansiMoveCursorUp(lastHeight - 1)
 			}
 			append(ansiMoveCursorToFirstColumn)
 
-			node.measureAndPlace()
-
-			var afterStatic = false // in order not to overwrite last line of static output
-            staticSurfaces.let { staticSurfaces ->
-                node.paintStatics(staticSurfaces, ansiLevel)
-                if (staticSurfaces.isNotEmpty()) {
-                    staticSurfaces.forEach { staticSurface ->
-                        appendSurface(staticSurface, addLineBreakAtBeginning = false)
-                        if (!afterStatic && staticSurface.height > 0) {
-                            afterStatic = true
-                        }
-                    }
-                    staticSurfaces.clear()
-                }
-            }
+			var addLineBreakAtBeginning = false
+			staticSurfaces.let { staticSurfaces ->
+				node.paintStatics(staticSurfaces, ansiLevel)
+				if (staticSurfaces.isNotEmpty()) {
+					staticSurfaces.forEach { staticSurface ->
+						appendSurface(staticSurface, addLineBreakAtBeginning)
+						if (!addLineBreakAtBeginning && staticSurface.height > 0) {
+							addLineBreakAtBeginning = true
+						}
+					}
+					staticSurfaces.clear()
+				}
+			}
 
 			val surface = node.paint(ansiLevel)
 			if (node.height > 0) {
-				appendSurface(surface, addLineBreakAtBeginning = afterStatic)
+				appendSurface(surface, addLineBreakAtBeginning)
 			}
 			lastHeight = surface.height
 

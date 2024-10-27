@@ -169,11 +169,11 @@ class AnsiRenderingTest {
 
 		assertThat(rendering.render(rootNode).toString()).isEqualTo(
 			"""
-			|${ansiMoveCursorToFirstColumn}One  $ansiClearLineAfterCursor
-			|Two  $ansiClearLineAfterCursor
+			|${ansiMoveCursorToFirstColumn}One$ansiClearLineAfterCursor
+			|Two$ansiClearLineAfterCursor
 			|Three$ansiClearLineAfterCursor
-			|Four $ansiClearLineAfterCursor
-			|Five $ansiClearLineAfterCursor
+			|Four$ansiClearLineAfterCursor
+			|Five$ansiClearLineAfterCursor
 			|Sup$ansiClearLineAfterCursor$ansiClearAllAfterCursor
 			""".trimMargin().wrapWithAnsiSynchronizedUpdate().replaceLineEndingsWithCRLF(),
 		)

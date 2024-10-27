@@ -32,7 +32,7 @@ fun RrtopApp(rrtopViewModel: RrtopViewModel, colorsPalette: RrtopColorsPalette) 
 	CompositionLocalProvider(LocalRrtopColorsPalette provides colorsPalette) {
 		Box(
 			modifier = Modifier
-                .size(terminal.size)
+				.size(terminal.size)
 				.background(LocalRrtopColorsPalette.current.mainBg)
 				.onKeyEvent {
 					when (it) {

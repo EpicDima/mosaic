@@ -80,10 +80,10 @@ private class RealTestMosaicComposition(
 		} else {
 			rendering.render(rootNode).toString()
 				.removeSurrounding(ansiBeginSynchronizedUpdate, ansiEndSynchronizedUpdate)
-                .replace(Regex("$ESC\\[\\d+A"), "")
-                .removePrefix(ansiMoveCursorToFirstColumn)
-                .removePrefix(ansiClearAllAfterCursor)
-                .replace(ansiClearLineAfterCursor, "")
+				.replace(Regex("$ESC\\[\\d+A"), "")
+				.removePrefix(ansiMoveCursorToFirstColumn)
+				.removeSuffix(ansiClearAllAfterCursor)
+				.replace(ansiClearLineAfterCursor, "")
 				.replace("\r\n", "\n") // CRLF to LF for simplicity
 		}
 		renderSnapshots.trySend(stringRender)
