@@ -5,6 +5,8 @@ package com.jakewharton.mosaic.ui.unit
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import kotlin.jvm.JvmInline
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Constructs an [IntSize] from width and height [Int] values.
@@ -53,6 +55,20 @@ public value class IntSize internal constructor(@PublishedApi internal val packe
 	public operator fun div(other: Int): IntSize =
 		IntSize(width = width / other, height = height / other)
 
+	/**
+	 * The lesser of the magnitudes of the [width] and the [height].
+	 */
+	@Stable
+	public val minDimension: Int
+		get() = min(width, height)
+
+	/**
+	 * The greater of the magnitudes of the [width] and the [height].
+	 */
+	@Stable
+	public val maxDimension: Int
+		get() = max(width, height)
+
 	@Stable
 	override fun toString(): String = "$width x $height"
 
@@ -63,3 +79,18 @@ public value class IntSize internal constructor(@PublishedApi internal val packe
 		public val Zero: IntSize = IntSize(0L)
 	}
 }
+
+/**
+ * Returns the [IntOffset] of the center of the rect from the point of [0, 0]
+ * with this [IntSize].
+ */
+@Stable
+public val IntSize.center: IntOffset
+	get() = IntOffset(
+		// Divide X by 2 by moving it to the low bits, then place it back in the high bits
+		(packedValue shr 33 shl 32)
+			or
+			// Move Y to the high bits so we can preserve the sign when dividing by 2, then
+			// move Y back to the low bits and mask out the top 32 bits for X
+			((packedValue shl 32 shr 33) and 0xffffffffL),
+	)

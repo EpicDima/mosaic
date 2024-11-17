@@ -34,14 +34,60 @@ import com.jakewharton.mosaic.ui.isUnspecifiedColor
 import com.jakewharton.mosaic.ui.isUnspecifiedTextStyle
 import com.jakewharton.mosaic.ui.unit.IntOffset
 import com.jakewharton.mosaic.ui.unit.IntSize
+import com.jakewharton.mosaic.ui.unit.center
 import de.cketti.codepoints.codePointAt
 import kotlin.math.max
+import kotlin.math.min
 
 public interface DrawScope {
 	public val width: Int
 	public val height: Int
 
 	private val size: IntSize get() = IntSize(width, height)
+
+	/**
+	 * Draws a circle at the provided center coordinate and radius. If no center point is provided
+	 * the center of the bounds is used.
+	 *
+	 * @param char Char to be applied to the circle
+	 * @param foreground Foreground color to be applied to the circle
+	 * @param background Background color to be applied to the circle
+	 * @param textStyle Text style to be applied to the circle
+	 * @param radius Radius of the circle
+	 * @param center Center coordinate where the circle is to be drawn
+	 * @param drawStyle Whether or not the circle is stroked or filled in
+	 */
+	public fun drawCircle(
+		char: Char,
+		foreground: Color = Color.Unspecified,
+		background: Color = Color.Unspecified,
+		textStyle: TextStyle = TextStyle.Unspecified,
+		radius: Int = size.minDimension / 2,
+		center: IntOffset = size.center,
+		drawStyle: DrawStyle = DrawStyle.Fill,
+	)
+
+	/**
+	 * Draws a circle at the provided center coordinate and radius. If no center point is provided
+	 * the center of the bounds is used.
+	 *
+	 * @param codePoint Code point to be applied to the circle
+	 * @param foreground Foreground color to be applied to the circle
+	 * @param background Background color to be applied to the circle
+	 * @param textStyle Text style to be applied to the circle
+	 * @param radius Radius of the circle
+	 * @param center Center coordinate where the circle is to be drawn
+	 * @param drawStyle Whether or not the circle is stroked or filled in
+	 */
+	public fun drawCircle(
+		codePoint: Int = UnspecifiedCodePoint,
+		foreground: Color = Color.Unspecified,
+		background: Color = Color.Unspecified,
+		textStyle: TextStyle = TextStyle.Unspecified,
+		radius: Int = size.minDimension / 2,
+		center: IntOffset = size.center,
+		drawStyle: DrawStyle = DrawStyle.Fill,
+	)
 
 	/**
 	 * Draws a rectangle with the given offset and size. If no offset from the top left is provided,
@@ -119,6 +165,240 @@ internal open class TextCanvasDrawScope(
 	override val width: Int,
 	override val height: Int,
 ) : DrawScope {
+	override fun drawCircle(
+		char: Char,
+		foreground: Color,
+		background: Color,
+		textStyle: TextStyle,
+		radius: Int,
+		center: IntOffset,
+		drawStyle: DrawStyle,
+	) {
+		drawCircle(char.code, foreground, background, textStyle, radius, center, drawStyle)
+	}
+
+	override fun drawCircle(
+		codePoint: Int,
+		foreground: Color,
+		background: Color,
+		textStyle: TextStyle,
+		radius: Int,
+		center: IntOffset,
+		drawStyle: DrawStyle,
+	) {
+		if (codePoint.isUnspecifiedCodePoint &&
+			foreground.isUnspecifiedColor &&
+			background.isUnspecifiedColor &&
+			textStyle.isUnspecifiedTextStyle ||
+			radius <= 0 ||
+			center.x + radius < 0 &&
+			center.y + radius < 0 ||
+			center.x - radius >= width &&
+			center.y - radius >= height
+		) {
+			// exit: circle with the specified parameters cannot be seen
+			return
+		}
+
+		when (drawStyle) {
+			is DrawStyle.Fill -> drawSolidCircle(
+				codePoint,
+				foreground,
+				background,
+				textStyle,
+				radius,
+				center,
+			)
+
+			is DrawStyle.Stroke -> {
+				val clippedStrokeWidth = max(1, drawStyle.width)
+				val adaptedForStrokeRadius = clippedStrokeWidth / 2 + radius
+				if (clippedStrokeWidth / 2 >= radius) {
+					drawSolidCircle(
+						codePoint,
+						foreground,
+						background,
+						textStyle,
+						adaptedForStrokeRadius,
+						center,
+					)
+					return
+				}
+
+				val strokeWidth = clippedStrokeWidth - 1
+				var x = 0
+				var y = adaptedForStrokeRadius
+				var d = 3 - 2 * adaptedForStrokeRadius
+
+				drawStrokedCirclePart(
+					x,
+					y,
+					codePoint,
+					foreground,
+					background,
+					textStyle,
+					center,
+					strokeWidth,
+				)
+				while (y >= x) {
+					x++
+					if (d > 0) {
+						y--
+						d += 4 * (x - y) + 10
+					} else {
+						d += 4 * x + 6
+					}
+					drawStrokedCirclePart(
+						x,
+						y,
+						codePoint,
+						foreground,
+						background,
+						textStyle,
+						center,
+						strokeWidth,
+					)
+				}
+			}
+		}
+	}
+
+	private inline fun drawStrokedCirclePart(
+		x: Int,
+		y: Int,
+		codePoint: Int,
+		foreground: Color,
+		background: Color,
+		textStyle: TextStyle,
+		center: IntOffset,
+		strokeWidth: Int,
+	) {
+		val x1 = center.x + x
+		val x2 = center.x - x
+		val x1Correct = x1 in 0..<width
+		val x2Correct = x2 in 0..<width
+		if (x1Correct || x2Correct) {
+			val start1 = min(height - 1, center.y + y)
+			val end1 = max(0, center.y + y - strokeWidth)
+			for (yy in start1 downTo end1) {
+				if (x1Correct) {
+					drawTextPixel(x1, yy, codePoint, foreground, background, textStyle)
+				}
+				if (x2Correct) {
+					drawTextPixel(x2, yy, codePoint, foreground, background, textStyle)
+				}
+			}
+
+			val start2 = min(height - 1, center.y - y + strokeWidth)
+			val end2 = max(0, center.y - y)
+			for (yy in start2 downTo end2) {
+				if (x1Correct) {
+					drawTextPixel(x1, yy, codePoint, foreground, background, textStyle)
+				}
+				if (x2Correct) {
+					drawTextPixel(x2, yy, codePoint, foreground, background, textStyle)
+				}
+			}
+		}
+
+		val y1 = center.y + x
+		val y2 = center.y - x
+		val y1Correct = y1 in 0..<height
+		val y2Correct = y2 in 0..<height
+		if (y1Correct || y2Correct) {
+			val start3 = min(width - 1, center.x + y)
+			val end3 = max(0, center.x + y - strokeWidth)
+			for (xx in start3 downTo end3) {
+				if (y1Correct) {
+					drawTextPixel(xx, y1, codePoint, foreground, background, textStyle)
+				}
+				if (y2Correct) {
+					drawTextPixel(xx, y2, codePoint, foreground, background, textStyle)
+				}
+			}
+
+			val start4 = min(width - 1, center.x - y + strokeWidth)
+			val end4 = max(0, center.x - y)
+			for (xx in start4 downTo end4) {
+				if (y1Correct) {
+					drawTextPixel(xx, y1, codePoint, foreground, background, textStyle)
+				}
+				if (y2Correct) {
+					drawTextPixel(xx, y2, codePoint, foreground, background, textStyle)
+				}
+			}
+		}
+	}
+
+	private fun drawSolidCircle(
+		codePoint: Int,
+		foreground: Color,
+		background: Color,
+		textStyle: TextStyle,
+		radius: Int,
+		center: IntOffset,
+	) {
+		var x = 0
+		var y = radius
+		var d = 3 - 2 * radius
+
+		drawSolidCirclePart(x, y, codePoint, foreground, background, textStyle, center)
+		while (y >= x) {
+			x++
+			if (d > 0) {
+				y--
+				d += 4 * (x - y) + 10
+			} else {
+				d += 4 * x + 6
+			}
+			drawSolidCirclePart(x, y, codePoint, foreground, background, textStyle, center)
+		}
+	}
+
+	private inline fun drawSolidCirclePart(
+		x: Int,
+		y: Int,
+		codePoint: Int,
+		foreground: Color,
+		background: Color,
+		textStyle: TextStyle,
+		center: IntOffset,
+	) {
+		val y11 = center.y + y
+		val y12 = center.y - y
+		val y11Correct = y11 in 0..<height
+		val y12Correct = y12 in 0..<height
+		if (y11Correct || y12Correct) {
+			val start1 = max(0, center.x - x)
+			val end1 = min(width - 1, center.x + x)
+			for (xx in start1..end1) {
+				if (y11Correct) {
+					drawTextPixel(xx, y11, codePoint, foreground, background, textStyle)
+				}
+				if (y12Correct) {
+					drawTextPixel(xx, y12, codePoint, foreground, background, textStyle)
+				}
+			}
+		}
+
+		val y21 = center.y + x
+		val y22 = center.y - x
+		val y21Correct = y21 in 0..<height
+		val y22Correct = y22 in 0..<height
+		if (y21Correct || y22Correct) {
+			val start2 = max(0, center.x - y)
+			val end2 = min(width - 1, center.x + y)
+			for (xx in start2..end2) {
+				if (y21Correct) {
+					drawTextPixel(xx, y21, codePoint, foreground, background, textStyle)
+				}
+				if (y22Correct) {
+					drawTextPixel(xx, y22, codePoint, foreground, background, textStyle)
+				}
+			}
+		}
+	}
+
 	override fun drawRect(
 		char: Char,
 		foreground: Color,
@@ -156,7 +436,7 @@ internal open class TextCanvasDrawScope(
 		}
 
 		when (drawStyle) {
-			DrawStyle.Fill -> drawSolidRect(codePoint, foreground, background, textStyle, topLeft, size)
+			is DrawStyle.Fill -> drawSolidRect(codePoint, foreground, background, textStyle, topLeft, size)
 			is DrawStyle.Stroke -> {
 				val strokeWidth = max(1, drawStyle.width)
 				if (strokeWidth * 2 >= size.width || strokeWidth * 2 >= size.height) {

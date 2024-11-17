@@ -59,6 +59,10 @@ public final class com/jakewharton/mosaic/layout/DrawModifierKt {
 }
 
 public abstract interface class com/jakewharton/mosaic/layout/DrawScope {
+	public abstract fun drawCircle-04TKKdk (CIIIIJLcom/jakewharton/mosaic/layout/DrawStyle;)V
+	public abstract fun drawCircle-04TKKdk (IIIIIJLcom/jakewharton/mosaic/layout/DrawStyle;)V
+	public static synthetic fun drawCircle-04TKKdk$default (Lcom/jakewharton/mosaic/layout/DrawScope;CIIIIJLcom/jakewharton/mosaic/layout/DrawStyle;ILjava/lang/Object;)V
+	public static synthetic fun drawCircle-04TKKdk$default (Lcom/jakewharton/mosaic/layout/DrawScope;IIIIIJLcom/jakewharton/mosaic/layout/DrawStyle;ILjava/lang/Object;)V
 	public abstract fun drawRect-K-Y9Gx4 (CIIIJJLcom/jakewharton/mosaic/layout/DrawStyle;)V
 	public abstract fun drawRect-K-Y9Gx4 (IIIIJJLcom/jakewharton/mosaic/layout/DrawStyle;)V
 	public static synthetic fun drawRect-K-Y9Gx4$default (Lcom/jakewharton/mosaic/layout/DrawScope;CIIIJJLcom/jakewharton/mosaic/layout/DrawStyle;ILjava/lang/Object;)V
@@ -714,6 +718,8 @@ public final class com/jakewharton/mosaic/ui/unit/IntSize {
 	public static fun equals-impl (JLjava/lang/Object;)Z
 	public static final fun equals-impl0 (JJ)Z
 	public static final fun getHeight-impl (J)I
+	public static final fun getMaxDimension-impl (J)I
+	public static final fun getMinDimension-impl (J)I
 	public static final fun getWidth-impl (J)I
 	public fun hashCode ()I
 	public static fun hashCode-impl (J)I
@@ -729,5 +735,6 @@ public final class com/jakewharton/mosaic/ui/unit/IntSize$Companion {
 
 public final class com/jakewharton/mosaic/ui/unit/IntSizeKt {
 	public static final fun IntSize (II)J
+	public static final fun getCenter-MSzmzZ8 (J)J
 }
 
