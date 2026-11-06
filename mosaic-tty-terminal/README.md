@@ -1,3 +1,3 @@
-# Mosaic TTY Terminal
+# Module mosaic-tty-terminal
 
-High-level terminal manipulation and parsing library.
+Terminal implementation and event parsing on top of a TTY from [mosaic-tty](https://github.com/JakeWharton/mosaic/tree/trunk/mosaic-tty).
